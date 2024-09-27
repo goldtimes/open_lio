@@ -66,9 +66,9 @@ include_directories(
 
 # file(GLOB common_lib "lib/*.cpp")
 
-add_executable(system_node src/app/system.cc)
+add_executable(app_node src/app/slam_app.cc)
 # add_dependencies(system_node ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
-target_link_libraries(system_node ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${OpenCV_LIBRARIES} gtsam)
+target_link_libraries(app_node ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${OpenCV_LIBRARIES} gtsam)
 
 
 # ###########
