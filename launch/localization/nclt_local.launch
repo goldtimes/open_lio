@@ -1,0 +1,4 @@
+<launch>
+    <rosparam file="$(find slam_note)/config/localization/config_nclt.yaml" command="load"/>
+    <node pkg="slam_note" type="app_node" name="app_node" output="screen"/>
+</launch>

@@ -59,6 +59,7 @@ include_directories(
 	${catkin_INCLUDE_DIRS}
 	${PCL_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
+  ${GLOG_INCLUDE_DIRS}
 	# ${GTSAM_INCLUDE_DIR}
 )
 
@@ -66,26 +67,16 @@ include_directories(
 
 # file(GLOB common_lib "lib/*.cpp")
 
-add_executable(app_node src/app/slam_app.cc)
+add_executable(app_node 
+  src/app/slam_app.cc
+  src/system/SystemManager.cc
+  src/system/ConfigParams.cc
+)
 # add_dependencies(system_node ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
-target_link_libraries(app_node ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${OpenCV_LIBRARIES} gtsam)
-
-
-# ###########
-# ## Build ##
-# ###########
-
-# # Range Image Projection
-# add_executable(${PROJECT_NAME}_imageProjection src/imageProjection.cpp ${common_lib})
-# add_dependencies(${PROJECT_NAME}_imageProjection ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
-# target_link_libraries(${PROJECT_NAME}_imageProjection ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${OpenCV_LIBRARIES} gtsam)
-
-# # Mapping Optimization
-# add_executable(${PROJECT_NAME}_mapOptmization src/mapOptmization.cpp ${common_lib})
-# add_dependencies(${PROJECT_NAME}_mapOptmization ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
-# target_compile_options(${PROJECT_NAME}_mapOptmization PRIVATE ${OpenMP_CXX_FLAGS})
-# target_link_libraries(${PROJECT_NAME}_mapOptmization Boost::timer ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${OpenCV_LIBRARIES} ${OpenMP_CXX_FLAGS} gtsam stdc++fs)
-
-# # IMU Preintegration
-# add_executable(${PROJECT_NAME}_imuPreintegration src/imuPreintegration.cpp ${common_lib})
-# target_link_libraries(${PROJECT_NAME}_imuPreintegration Boost::timer ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${OpenCV_LIBRARIES} gtsam)
+target_link_libraries(app_node 
+  ${catkin_LIBRARIES} 
+  ${PCL_LIBRARIES} 
+  ${OpenCV_LIBRARIES} 
+  gtsam
+  glog
+)

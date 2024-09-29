@@ -56,15 +56,23 @@ LidarModel::LidarModel(const std::string& type) {
     } else if (type == "Velodyne_16") {
         // 16 * 2000个点
         v_scan_num_ = 16;
-        h_scan_num_ = 2000;
+        h_scan_num_ = 1800;
         v_res = 2.0 * math_utils::kD2R;
         h_res = 0.2 * math_utils::kD2R;
         lower_angle_ = 15.0 * math_utils::kD2R;
         lidar_type = LidarType::VELODYNE;
+    } else if (type == "Velodyne_32") {
+        // 16 * 2000个点
+        v_scan_num_ = 32;
+        h_scan_num_ = 1800;
+        v_res = 1.2903 * math_utils::kD2R;
+        h_res = 0.2 * math_utils::kD2R;
+        lower_angle_ = 30.0 * math_utils::kD2R;
+        lidar_type = LidarType::VELODYNE;
     } else if (type == "Velodyne_64") {
         // 64 * 2000个点
         v_scan_num_ = 64;
-        h_scan_num_ = 2000;
+        h_scan_num_ = 1800;
         v_res = 0.4 * math_utils::kD2R;
         h_res = 0.2 * math_utils::kD2R;
         lower_angle_ = 24.9 * math_utils::kD2R;

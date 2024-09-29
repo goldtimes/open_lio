@@ -1,0 +1,70 @@
+has_encoder: false
+
+sensor_topic:
+    lidar_topic: "points_raw"
+    imu_topic: "imu_raw"
+    encoder_topic: "odom"
+
+slam_mode: 2  # 1: Mapping, 2: Localization
+
+lidar:
+    # Velodyne_16, Velodyne_32, Velodyne_64, Ouster_128,
+    # LeiShen, RoboSense, Livox_Avia, Livox_Mid_360, None
+    lidar_type: Velodyne_32
+    lidar_point_time_scale: 1.0e-6
+    lidar_jump_span: 6
+    lidar_min_dist: 2.0
+    lidar_max_dist: 1000.0
+    lidar_position_noise: 0.001
+    lidar_rotation_noise: 0.05
+
+imu:
+    init_acc_bias: 0.0
+    init_gyro_bias: 0.0
+    imu_acc_noise_std: 0.1
+    imu_gryo_noise_std: 0.01
+    imu_acc_rw_noise: 1.0e-5
+    imu_gyro_rw_noise: 1.0e-5
+    # has_orientation: false
+    # data_searcher_buffer_size: 2000
+gravity: 9.81
+
+calibration:
+    lidar_to_imu: [ 1.0, 0.0, 0.0, 0.0,
+                    0.0, 1.0, 0.0, 0.0,
+                    0.0, 0.0, 1.0, 0.0,
+                    0.0, 0.0, 0.0, 1.0 ]
+
+# frontend:
+#     fusion_opti_iters: 10
+#     fusion_method: TightCouplingOptimization # LooseCoupling, TightCouplingKF, TightCouplingOptimization
+
+#     registration_and_searcher_mode: PointToPlane_KdTree
+#     feature:
+#         planar_voxel_filter_size: 0.5
+#     registration:
+#         local_map_size: 0
+#         optimization_iter_num: 8
+#         point_to_planar_thres: 0.1
+#         position_converge_thres: 0.005
+#         rotation_converge_thres: 0.005
+#         local_map_cloud_filter_size: 0.5
+#         keyframe_delta_distance: 0.0
+#         keyframe_delta_rotation: 0.0
+
+# system:
+#     keyframe_delta_distance: 1.0
+#     keyframe_delta_rotation: 0.2
+#     enable_loopclosure: true
+#     enable_visualize_global_map: true
+#     global_map_visualization_resolution: 0.7
+#     tile_map_grid_size: 100.0
+
+# loopclosure:
+#     registration_converge_threshold: 1.5
+#     skip_near_loopclosure_threshold: 100
+#     skip_near_keyframe_threshold: 100
+#     candidate_local_map_left_range: 20
+#     candidate_local_map_right_range: 20
+#     loopclosure_local_map_left_range: 30
+#     near_neighbor_distance_threshold: 10.0

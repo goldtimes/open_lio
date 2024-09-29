@@ -3,6 +3,8 @@
 #include <ros/ros.h>
 #include <fstream>
 #include <iostream>
+#include <memory>
+#include "system/SystemManager.hh"
 
 void SignalHandler(const char* data, int size) {
     // 保存错误到文件
@@ -22,8 +24,15 @@ int main(int argc, char** argv) {
     google::InstallFailureSignalHandler();
     google::InstallFailureWriter(&SignalHandler);
 
-    ros::init(argc, argv, "");
-    ros::NodeHandle nh;
+    ros::init(argc, argv, "lio_slam_node");
+    const auto nh = std::make_shared<ros::NodeHandle>();
+    ros::Rate rate(1000);
+    lio::SystemManager manager(nh);
+    while (ros::ok()) {
+        ros::spinOnce();
+        // manager.Run();
+        rate.sleep();
+    }
 
     return 0;
 }
