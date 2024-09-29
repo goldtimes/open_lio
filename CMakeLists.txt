@@ -1,10 +1,18 @@
 cmake_minimum_required(VERSION 3.0.2)
 project(slam_note)
 
-set(CMAKE_BUILD_TYPE "Release")
 set(CMAKE_CXX_FLAGS "-std=c++17")
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall -g -pthread")
+
+
+# set(CMAKE_BUILD_TYPE "Release")
+IF (NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Release)
+ENDIF ()
+
+# 添加cmake中定义的变量
+add_definitions(-DPROJECT_SOURCE_DIR=\"${PROJECT_SOURCE_DIR}\")
 
 # 包含自己的cmake
 include(cmake/packages.cmake)

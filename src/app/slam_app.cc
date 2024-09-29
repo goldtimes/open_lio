@@ -23,7 +23,8 @@ int main(int argc, char** argv) {
     google::InitGoogleLogging(argv[0]);
     google::InstallFailureSignalHandler();
     google::InstallFailureWriter(&SignalHandler);
-
+    // PROJECT_SOURCE_DIR 直接用就行
+    LOG(INFO) << "PROJECT_SOURCE_DIR:" << PROJECT_SOURCE_DIR;
     ros::init(argc, argv, "lio_slam_node");
     const auto nh = std::make_shared<ros::NodeHandle>();
     ros::Rate rate(1000);
@@ -33,6 +34,8 @@ int main(int argc, char** argv) {
         // manager.Run();
         rate.sleep();
     }
+
+    google::ShutdownGoogleLogging();
 
     return 0;
 }
