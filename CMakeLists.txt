@@ -46,6 +46,12 @@ find_package(OpenCV REQUIRED QUIET)
 find_package(Boost REQUIRED COMPONENTS timer)
 
 
+add_service_files(
+  FILES
+  save_map.srv
+)
+generate_messages(DEPENDENCIES std_msgs)
+
 catkin_package(
   INCLUDE_DIRS include
   DEPENDS PCL 
@@ -60,6 +66,8 @@ catkin_package(
   message_generation
   visualization_msgs
 )
+
+
 
 include_directories(
 	include
