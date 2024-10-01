@@ -87,6 +87,7 @@ add_executable(app_node
   src/app/slam_app.cc
   src/system/SystemManager.cc
   src/system/ConfigParams.cc
+  src/lidar_process/lidar_model.cc
 )
 # add_dependencies(system_node ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
 target_link_libraries(app_node 

@@ -12,6 +12,8 @@
 #include <memory>
 #include <mutex>
 #include <queue>
+#include "common/math_utils.hh"
+#include "sensors/imu.hh"
 #include "slam_note/save_map.h"
 
 namespace lio {
@@ -41,6 +43,8 @@ class SystemManager {
     void InitRosPublishers();
     void InitRosSubscribers();
     void InitServer();
+
+    bool TryToInitIMU(const IMUData& imu_data, Eigen::Vector3d& init_acc);
 
     void LidarLivoxCallback(const livox_ros_driver::CustomMsg::ConstPtr& livox_msg);
     void LidarStandarMsgCallback(const sensor_msgs::PointCloud2::Ptr& msg);

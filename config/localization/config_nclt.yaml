@@ -25,7 +25,7 @@ imu:
     imu_gryo_noise_std: 0.01
     imu_acc_rw_noise: 1.0e-5
     imu_gyro_rw_noise: 1.0e-5
-    # has_orientation: false
+    has_orientation: false
     # data_searcher_buffer_size: 2000
 gravity: 9.81
 

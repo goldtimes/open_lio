@@ -1,8 +1,9 @@
 #include "system/SystemManager.hh"
 #include <glog/logging.h>
+#include "common/constant_variable.hh"
+#include "common/ros_util.hh"
 #include "lidar_process/lidar_model.hh"
 #include "system/ConfigParams.hh"
-
 namespace lio {
 SystemManager::SystemManager(std::shared_ptr<ros::NodeHandle> nh) {
     nh_ = std::move(nh);
@@ -79,6 +80,8 @@ void SystemManager::InitConfigParams() {
     nh_->param<double>("imu/imu_gyro_rw_noise", config.imu_config.imu_gyro_rw_noise, 0.0);
     LOG(INFO) << "imu/imu_gyro_rw_noise:" << config.imu_config.imu_gyro_rw_noise;
     LOG(INFO) << "imu/imu_acc_rw_noise:" << config.imu_config.imu_acc_rw_noise;
+    nh_->param<bool>("imu/has_orientation", config.imu_config.has_orientation, false);
+    LOG(INFO) << "imu/has_orientation:" << config.imu_config.has_orientation;
     // encoder config
     nh_->param<double>("encoder/encoder_position_noise", config.encoder_config.encoder_position_noise, 0.0001);
     nh_->param<double>("encoder/encoder_rotation_noise", config.encoder_config.encoder_rotation_noise, 0.05);
@@ -165,7 +168,7 @@ void SystemManager::LidarLivoxCallback(const livox_ros_driver::CustomMsg::ConstP
     }
     if (system_has_init_) {
         // 点数的多少
-        int point_size = livox_msg->point_num;
+        size_t point_size = livox_msg->point_num;
         // frame 和 time
         cloud_ros.header = livox_msg->header;
         cloud_ros.width = point_size;
@@ -201,7 +204,96 @@ void SystemManager::LidarStandarMsgCallback(const sensor_msgs::PointCloud2::Ptr&
     }
 }
 void SystemManager::IMUCallback(const sensor_msgs::Imu::Ptr& msg) {
+    // 无论什么松耦合\紧耦合都需要初始化
+    static V3d init_mean_acc = V3d::Zero();  // acc的均值
+    static V3d last_angular_vel = V3d::Zero();
+    static Eigen::Quaterniond last_orientation;
+    static TimeStampUs last_timestamped_;
+    IMUData imu_data(RosTimeToUs(msg->header), RosV3dToEigen(msg->angular_velocity),
+                     RosV3dToEigen(msg->linear_acceleration));
+    /// 默认为紧耦合的方式
+    // 未初始化
+    if (!system_has_init_.load()) {
+        const auto result = TryToInitIMU(imu_data, init_mean_acc);
+        system_has_init_.store(result);
+        if (system_has_init_.load()) {
+            // 初始化完成, 设置朝向信息
+            if (ConfigParams::GetInstance().imu_config.has_orientation) {
+                imu_data.orientation_ = RosQuaternionToEigen(msg->orientation);
+            } else {
+                imu_data.orientation_ = Eigen::Quaterniond::Identity();
+                last_angular_vel = imu_data.gyro_;
+                last_orientation = Eigen::Quaterniond::Identity();
+                last_timestamped_ = imu_data.timestamped_;
+            }
+            // 将这一一帧的imu保存起来
+            imu_data.acc_ = imu_data.acc_ * ConfigParams::GetInstance().gravity_norm / init_mean_acc.norm();
+            // cache imu
+        }
+        return;
+    }
+    // 初始化成功后
+    imu_data.acc_ = imu_data.acc_ * ConfigParams::GetInstance().gravity_norm / init_mean_acc.norm();
+    if (ConfigParams::GetInstance().imu_config.has_orientation) {
+        imu_data.orientation_ = RosQuaternionToEigen(msg->orientation);
+    } else {
+        // 角速度*dt = 旋转量
+        const Eigen::Quaterniond delta_q(
+            math_utils::SO3Exp((last_angular_vel + imu_data.gyro_) * 0.5 * (imu_data.timestamped_ - last_timestamped_) *
+                               kMicroseconds2Seconds));
+        imu_data.orientation_ = last_orientation * delta_q;
+        last_timestamped_ = imu_data.timestamped_;
+        last_orientation = imu_data.orientation_;
+        last_angular_vel = imu_data.gyro_;
+    }
+    // cache imu data
 }
+
+bool SystemManager::TryToInitIMU(const IMUData& imu_data, Eigen::Vector3d& init_acc) {
+    // 计算零偏和方差
+    static V3d mean_acc = V3d::Zero();
+    static V3d mean_gyro = V3d::Zero();
+    static V3d cov_acc = V3d::Zero();
+    static V3d cov_gyro = V3d::Zero();
+    static int N = 0;
+
+    if (N == 0) {
+        mean_acc = imu_data.acc_;
+        mean_gyro = imu_data.gyro_;
+        N++;
+    } else {
+        // 均值的更新和方差的计算公式不太一样
+        // 更新均值
+        const auto& acc = imu_data.acc_;
+        const auto& gyro = imu_data.gyro_;
+        mean_acc += (acc - mean_acc) / N;
+        mean_gyro += (gyro - mean_gyro) / N;
+        // cov = cov * (N - 1) / N + (new_value - mean) * (new_value - mean)T * (N - 1) / (N * N)
+        // 更新方差
+        cov_acc = cov_acc * (N - 1) / N + (acc - mean_acc).cwiseProduct(mean_acc - acc) * (N - 1) / (N * N);
+        cov_gyro = cov_gyro * (N - 1) / N + (gyro - mean_gyro).cwiseProduct(mean_gyro - gyro) * (N - 1) / (N * N);
+        N++;
+    }
+    init_acc = mean_acc;
+    if (N > 300) {
+        N = 0;
+        mean_acc = V3d::Zero();
+        mean_gyro = V3d::Zero();
+        cov_acc = V3d::Zero();
+        cov_gyro = V3d::Zero();
+        LOG(WARNING) << "IMU Movement acceleration is too larger";
+        return false;
+    }
+    if (N > 200 && cov_acc.norm() < 0.05 && cov_gyro.norm() < 0.01) {
+        ConfigParams::GetInstance().gravity_vec =
+            -mean_acc / mean_acc.norm() * ConfigParams::GetInstance().gravity_norm;
+        LOG(INFO) << "mean acc:" << mean_acc.transpose() << ", mean gyro:" << mean_gyro.transpose();
+        LOG(INFO) << "cov acc:" << cov_acc.transpose() << ", cov gyro:" << cov_gyro.transpose();
+        return true;
+    }
+    return false;
+}
+
 void SystemManager::EncoderCallback(const nav_msgs::Odometry::Ptr& msg) {
 }
 void SystemManager::InitposeCallback(const geometry_msgs::PoseWithCovarianceStampedConstPtr& init_pose_cov) {

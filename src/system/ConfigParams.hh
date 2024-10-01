@@ -13,14 +13,13 @@ using V3d = Eigen::Vector3d;
 using M4d = Eigen::Matrix4d;
 
 struct IMUConfig {
-    V3d gravity_vec{0, 0, -9.81};
-    double gravity_norm{9.81};
     double init_acc_bias{};
     double init_gyro_bias{};
     double imu_acc_noise_std{};
     double imu_gryo_noise_std{};
     double imu_acc_rw_noise{};
     double imu_gyro_rw_noise{};
+    bool has_orientation{};
 };
 
 struct LidarConfig {
@@ -89,6 +88,9 @@ class ConfigParams {
     RegistrationConfig registration_config;
     // 回环检测参数
     LoopClosureConfig lp_config;
+
+    V3d gravity_vec{0, 0, -9.81};
+    double gravity_norm{9.81};
 
     // 点云地图的切割大小
     double split_map_size_;
