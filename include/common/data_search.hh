@@ -55,7 +55,7 @@ class DataSearcher {
         auto r_it = data_queue_.rbegin();
         // 从尾部开始遍历，找到第一个小于time的时间
         while (time < r_it->timestamped_) {
-            r_it++:
+            r_it++;
         }
         auto r_it_next = r_it - 1;
         // 根据delta_time找到最近的数据

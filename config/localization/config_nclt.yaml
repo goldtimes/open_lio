@@ -1,4 +1,5 @@
 has_encoder: false
+imu_data_searcher_buffer: 2000
 
 sensor_topic:
     lidar_topic: "points_raw"

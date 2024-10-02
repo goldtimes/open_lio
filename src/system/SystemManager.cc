@@ -11,6 +11,8 @@ SystemManager::SystemManager(std::shared_ptr<ros::NodeHandle> nh) {
     InitLidarModel();
     InitRosPublishers();
     InitRosSubscribers();
+
+    imu_data_searcher_ptr_ = std::make_shared<IMUDataSearcher>(ConfigParams::GetInstance().imu_data_buffer_size_);
 }
 
 SystemManager::~SystemManager() {
@@ -23,6 +25,8 @@ void SystemManager::InitConfigParams() {
     LOG(INFO) << "lidar_topic:" << config.lidar_topic_;
     nh_->param<std::string>("sensor_topic/imu_topic", config.imu_topic_, "imu");
     LOG(INFO) << "imu_topic:" << config.imu_topic_;
+    nh_->param<int>("imu_data_buffer_size", config.imu_data_buffer_size_, 2000);
+    LOG(INFO) << "imu_data_buffer_size:" << config.imu_data_buffer_size_;
     nh_->param<bool>("has_encoder", config.has_encoder_, false);
     if (!config.has_encoder_) {
         nh_->param<std::string>("sensor_topic/encoder_topic", config.encoder_topic_, "odom");
@@ -229,6 +233,7 @@ void SystemManager::IMUCallback(const sensor_msgs::Imu::Ptr& msg) {
             // 将这一一帧的imu保存起来
             imu_data.acc_ = imu_data.acc_ * ConfigParams::GetInstance().gravity_norm / init_mean_acc.norm();
             // cache imu
+            imu_data_searcher_ptr_->CacheData(imu_data);
         }
         return;
     }
@@ -247,6 +252,7 @@ void SystemManager::IMUCallback(const sensor_msgs::Imu::Ptr& msg) {
         last_angular_vel = imu_data.gyro_;
     }
     // cache imu data
+    imu_data_searcher_ptr_->CacheData(imu_data);
 }
 
 bool SystemManager::TryToInitIMU(const IMUData& imu_data, Eigen::Vector3d& init_acc) {
@@ -299,5 +305,6 @@ void SystemManager::EncoderCallback(const nav_msgs::Odometry::Ptr& msg) {
 void SystemManager::InitposeCallback(const geometry_msgs::PoseWithCovarianceStampedConstPtr& init_pose_cov) {
 }
 bool SystemManager::SaveMap(slam_note::save_map::Request& req, slam_note::save_map::Response& resp) {
+    return true;
 }
 }  // namespace lio

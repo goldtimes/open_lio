@@ -89,6 +89,8 @@ class ConfigParams {
     // 回环检测参数
     LoopClosureConfig lp_config;
 
+    int imu_data_buffer_size_;
+
     V3d gravity_vec{0, 0, -9.81};
     double gravity_norm{9.81};
 

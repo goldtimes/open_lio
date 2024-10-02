@@ -13,6 +13,7 @@
 #include <mutex>
 #include <queue>
 #include "common/math_utils.hh"
+#include "imu/imu_data_search.hh"
 #include "sensors/imu.hh"
 #include "slam_note/save_map.h"
 
@@ -91,5 +92,8 @@ class SystemManager {
     tf::TransformBroadcaster tf_broadcaster_;
     std::shared_ptr<ros::NodeHandle> ros_nh_;
     SLAM_MODE slam_mode_ = SLAM_MODE::UNKNOW;
+
+    // imu_data_searcher
+    std::shared_ptr<IMUDataSearcher> imu_data_searcher_ptr_;
 };
 }  // namespace lio
