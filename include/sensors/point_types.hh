@@ -1,6 +1,7 @@
 #pragma once
 
 #include <pcl/point_types.h>
+#include <pcl/impl/pcl_base.hpp>
 
 struct RsPointXYZIRT {
     PCL_ADD_POINT4D;
