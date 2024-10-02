@@ -36,22 +36,22 @@ calibration:
                     0.0, 0.0, 1.0, 0.0,
                     0.0, 0.0, 0.0, 1.0 ]
 
-# frontend:
-#     fusion_opti_iters: 10
-#     fusion_method: TightCouplingOptimization # LooseCoupling, TightCouplingKF, TightCouplingOptimization
+frontend:
+    fusion_opti_iters: 10
+    fusion_method: TightCouplingOptimization # LooseCoupling, TightCouplingKF, TightCouplingOptimization
 
-#     registration_and_searcher_mode: PointToPlane_KdTree
-#     feature:
-#         planar_voxel_filter_size: 0.5
-#     registration:
-#         local_map_size: 0
-#         optimization_iter_num: 8
-#         point_to_planar_thres: 0.1
-#         position_converge_thres: 0.005
-#         rotation_converge_thres: 0.005
-#         local_map_cloud_filter_size: 0.5
-#         keyframe_delta_distance: 0.0
-#         keyframe_delta_rotation: 0.0
+    registration_and_searcher_mode: PointToPlane_KdTree
+    feature:
+        planar_voxel_filter_size: 0.5
+    registration:
+        local_map_size: 0
+        optimization_iter_num: 8
+        point_to_planar_thres: 0.1
+        position_converge_thres: 0.005
+        rotation_converge_thres: 0.005
+        local_map_cloud_filter_size: 0.5
+        keyframe_delta_distance: 0.0
+        keyframe_delta_rotation: 0.0
 
 # system:
 #     keyframe_delta_distance: 1.0

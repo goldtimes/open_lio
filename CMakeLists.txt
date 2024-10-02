@@ -25,7 +25,7 @@ find_package(catkin REQUIRED COMPONENTS
   
   # pcl library
   pcl_ros
-
+  pcl_conversions
   # external
   # ndt_omp
   livox_ros_driver
@@ -40,8 +40,8 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 find_package(OpenMP REQUIRED)
-# find_package(PCL REQUIRED QUIET)
-find_package(OpenCV REQUIRED QUIET)
+# find_package(PCL REQUIRED)
+# find_package(OpenCV REQUIRED QUIET)
 # find_package(GTSAM REQUIRED QUIET)
 find_package(Boost REQUIRED COMPONENTS timer)
 
@@ -88,8 +88,9 @@ add_executable(app_node
   src/system/SystemManager.cc
   src/system/ConfigParams.cc
   src/lidar_process/lidar_model.cc
+  src/slam/preprocess.cc
 )
-# add_dependencies(system_node ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
+add_dependencies(app_node ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
 target_link_libraries(app_node 
   ${catkin_LIBRARIES} 
   ${PCL_LIBRARIES} 

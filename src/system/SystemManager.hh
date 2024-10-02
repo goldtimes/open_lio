@@ -12,6 +12,7 @@
 #include <memory>
 #include <mutex>
 #include <queue>
+#include "common/data_type.hh"
 #include "common/math_utils.hh"
 #include "imu/imu_data_search.hh"
 #include "sensors/imu.hh"

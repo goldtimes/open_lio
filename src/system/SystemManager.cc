@@ -91,6 +91,62 @@ void SystemManager::InitConfigParams() {
     nh_->param<double>("encoder/encoder_rotation_noise", config.encoder_config.encoder_rotation_noise, 0.05);
     LOG(INFO) << "encoder/encoder_position_noise:" << config.encoder_config.encoder_position_noise;
     LOG(INFO) << "encoder/encoder_rotation_noise:" << config.encoder_config.encoder_rotation_noise;
+    // gravity
+    nh_->param<double>("gravity", config.gravity_norm, 9.81);
+    LOG(INFO) << "gravity_norm:" << config.gravity_norm;
+    // T_LI;
+    std::vector<double> T_lidar_to_imu;
+    nh_->getParam("calibration/lidar_to_imu", T_lidar_to_imu);
+    config.T_IL_ = Eigen::Map<Eigen::Matrix<double, 4, 4>, Eigen::RowMajor>(T_lidar_to_imu.data());
+    // 前端参数
+    // frontend config parameters
+    nh_->param("frontend/registration_and_searcher_mode", config.front_config.registration_and_searcher_mode_,
+               StringEmpty);
+    nh_->param("frontend/feature/corner_thres", config.front_config.loam_feature_corner_thres_, FloatNaN);
+    nh_->param("frontend/feature/planar_thres", config.front_config.loam_feature_planar_thres_, FloatNaN);
+    nh_->param("frontend/feature/planar_voxel_filter_size", config.front_config.loam_feature_planar_voxel_filter_size_,
+               FloatNaN);
+    nh_->param("frontend/feature/corner_voxel_filter_size", config.front_config.loam_feature_corner_voxel_filter_size_,
+               FloatNaN);
+    nh_->param("frontend/registration/line_ratio_thres", config.front_config.registration_line_ratio_thres_, FloatNaN);
+    nh_->param("frontend/registration/point_search_thres", config.front_config.registration_point_search_thres_,
+               FloatNaN);
+    nh_->param("frontend/registration/point_to_planar_thres", config.front_config.registration_point_to_planar_thres_,
+               FloatNaN);
+    nh_->param("frontend/registration/local_planar_map_size", config.front_config.registration_local_planar_map_size_,
+               IntNaN);
+    nh_->param("frontend/registration/local_corner_map_size", config.front_config.registration_local_corner_map_size_,
+               IntNaN);
+    nh_->param("frontend/registration/keyframe_delta_distance", config.front_config.registration_keyframe_delta_dist_,
+               DoubleNaN);
+    nh_->param("frontend/registration/keyframe_delta_rotation",
+               config.front_config.registration_keyframe_delta_rotation_, DoubleNaN);
+    nh_->param("frontend/registration/rotation_converge_thres",
+               config.front_config.registration_rotation_converge_thres_, FloatNaN);
+    nh_->param("frontend/registration/position_converge_thres",
+               config.front_config.registration_position_converge_thres_, FloatNaN);
+    nh_->param("frontend/registration/local_corner_voxel_filter_size",
+               config.front_config.registration_local_corner_filter_size_, FloatNaN);
+    nh_->param("frontend/registration/local_planar_voxel_filter_size",
+               config.front_config.registration_local_planar_filter_size_, FloatNaN);
+    nh_->param("frontend/registration/local_map_size", config.front_config.registration_local_map_size_, IntNaN);
+    nh_->param("frontend/registration/local_map_cloud_filter_size",
+               config.front_config.registration_local_map_cloud_filter_size_, FloatNaN);
+    nh_->param("frontend/registration/source_cloud_filter_size",
+               config.front_config.registration_source_cloud_filter_size_, FloatNaN);
+    nh_->param("frontend/registration/optimization_iter_num", config.front_config.registration_opti_iter_num_, IntNaN);
+    nh_->param("frontend/registration/ndt_voxel_size", config.front_config.registration_ndt_voxel_size_, DoubleNaN);
+    nh_->param("frontend/registration/ndt_outlier_threshold", config.front_config.registration_ndt_outlier_threshold_,
+               DoubleNaN);
+    nh_->param("frontend/registration/ndt_min_points_in_voxel",
+               config.front_config.registration_ndt_min_points_in_voxel_, IntNaN);
+    nh_->param("frontend/registration/ndt_max_points_in_voxel",
+               config.front_config.registration_ndt_max_points_in_voxel_, IntNaN);
+    nh_->param("frontend/registration/ndt_min_effective_pts", config.front_config.registration_ndt_min_effective_pts_,
+               IntNaN);
+    nh_->param("frontend/registration/ndt_capacity", config.front_config.registration_ndt_capacity_, IntNaN);
+    nh_->param("frontend/fusion_method", config.fusion_method_, StringEmpty);
+    nh_->param("frontend/fusion_opti_iters", config.front_config.frontend_fusion_opti_iters_, IntNaN);
 }
 
 void SystemManager::InitServer() {

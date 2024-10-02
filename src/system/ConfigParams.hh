@@ -42,15 +42,6 @@ struct EncoderConfig {
 
 struct LoopClosureConfig {};
 
-// loam like特征提取方式的参数
-struct LidarFeatureConfig {
-    double loam_feature_corner_thres{};
-    double loam_feature_planner_thres{};
-    // 降采样参数
-    double loam_feature_corner_voxel_filter_size{};
-    double loam_feature_planner_voxel_filter_size{};
-};
-
 struct SystemConfig {
     double keyframe_angle_thres{};
     double keyframe_distance_thres{};
@@ -61,7 +52,39 @@ struct SystemConfig {
 };
 
 // 不同lidar_odom模式下的配准参数
-struct RegistrationConfig {};
+struct FrontConfig {
+    // loam feature parameters
+    std::string registration_and_searcher_mode_{};
+    float loam_feature_corner_thres_{};
+    float loam_feature_planar_thres_{};
+    float loam_feature_planar_voxel_filter_size_{};
+    float loam_feature_corner_voxel_filter_size_{};
+
+    // registration parameters
+    float registration_local_corner_filter_size_{};
+    float registration_local_planar_filter_size_{};
+    float registration_local_map_cloud_filter_size_{};
+    float registration_source_cloud_filter_size_{};
+    float registration_line_ratio_thres_{};
+    float registration_point_search_thres_{};
+    float registration_point_to_planar_thres_{};
+    float registration_position_converge_thres_{};
+    float registration_rotation_converge_thres_{};
+    double registration_keyframe_delta_dist_{};
+    double registration_keyframe_delta_rotation_{};
+    double registration_ndt_voxel_size_{};
+    double registration_ndt_outlier_threshold_{};
+    int registration_ndt_min_points_in_voxel_{};
+    int registration_ndt_max_points_in_voxel_{};
+    int registration_ndt_min_effective_pts_{};
+    int registration_ndt_capacity_{};
+    int registration_local_map_size_{};
+    int registration_local_planar_map_size_{};
+    int registration_local_corner_map_size_{};
+    int registration_opti_iter_num_{};
+    // frontend parameters
+    int frontend_fusion_opti_iters_{};  // optimization iterations
+};
 
 class ConfigParams {
    public:
@@ -79,13 +102,12 @@ class ConfigParams {
     IMUConfig imu_config;
     // lidar 参数
     LidarConfig lidar_config;
-    LidarFeatureConfig feature_config;
     // encoder 参数
     EncoderConfig encoder_config;
     // 系统配置参数
     SystemConfig system_config;
-    // 配准参数
-    RegistrationConfig registration_config;
+    // 前端配准的参数
+    FrontConfig front_config;
     // 回环检测参数
     LoopClosureConfig lp_config;
 
@@ -99,7 +121,7 @@ class ConfigParams {
     // eskf or ieskf
     std::string ekf_model_;
     // 紧耦合还是松耦合的方式
-    std::string fusion_model_;
+    std::string fusion_method_;
     // 前端的迭代次数
     int frontend_iter_;
     // lidar->encoder的外参
