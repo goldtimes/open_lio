@@ -23,7 +23,7 @@ inline void RemoveNanFromPointCloud(const pcl::PointCloud<PointType>& cloud_in, 
                 continue;
             }
             cloud_out.points[j] = cloud_in.points[i];
-            j++:
+            j++;
         }
         cloud_out.resize(j);
         cloud_out.height = 1;

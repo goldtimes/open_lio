@@ -2,6 +2,7 @@
 
 #include <deque>
 #include <mutex>
+#include <optional>
 #include <type_traits>
 #include <vector>
 #include "sensors/data.hh"
@@ -87,11 +88,11 @@ class DataSearcher {
             return true;
         }
         // time 在 beign-end之间
-        auto& r_it = data_queue_.rbegin();
+        auto r_it = data_queue_.rbegin();
         while (time < r_it->timestamped_) {
             r_it++;
         }
-        auto& r_it_next = r_it - 1;
+        auto r_it_next = r_it - 1;
         data_l = *r_it;
         data_r = *r_it_next;
         return true;

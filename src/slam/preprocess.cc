@@ -235,6 +235,7 @@ PCLCloudXYZIRT::Ptr PreProcessing::ConvertRosMessageToCloud(const sensor_msgs::P
         if (cloud_ptr->points.back().time <= 0.0f) {
             ComputePointOffsetTime(cloud_ptr, 10.0);
         }
+        return cloud_ptr;
 
     } else if (LidarModel::Instance()->lidar_type == LidarType::OUSTER) {
         pcl::PointCloud<VelodynePointXYZIRT> cloud_ouster;
@@ -265,6 +266,8 @@ PCLCloudXYZIRT::Ptr PreProcessing::ConvertRosMessageToCloud(const sensor_msgs::P
         });
         cloud_ptr->header = cloud_ouster.header;
         cloud_ptr->is_dense = true;
+        return cloud_ptr;
+
     } else if (LidarModel::Instance()->lidar_type == LidarType::LEISHEN) {
         pcl::PointCloud<VelodynePointXYZIRT> cloud_leishen;
         pcl::fromROSMsg(*msg, cloud_leishen);
@@ -294,6 +297,8 @@ PCLCloudXYZIRT::Ptr PreProcessing::ConvertRosMessageToCloud(const sensor_msgs::P
         });
         cloud_ptr->header = cloud_leishen.header;
         cloud_ptr->is_dense = true;
+        return cloud_ptr;
+
     } else if (LidarModel::Instance()->lidar_type == LidarType::ROBOSENSE) {
         pcl::PointCloud<VelodynePointXYZIRT> cloud_robosen;
         pcl::fromROSMsg(*msg, cloud_robosen);
@@ -323,6 +328,8 @@ PCLCloudXYZIRT::Ptr PreProcessing::ConvertRosMessageToCloud(const sensor_msgs::P
         });
         cloud_ptr->header = cloud_robosen.header;
         cloud_ptr->is_dense = true;
+        return cloud_ptr;
+
     } else if (LidarModel::Instance()->lidar_type == LidarType::MID360) {
         pcl::PointCloud<VelodynePointXYZIRT> cloud_mid360;
         pcl::fromROSMsg(*msg, cloud_mid360);
@@ -352,6 +359,7 @@ PCLCloudXYZIRT::Ptr PreProcessing::ConvertRosMessageToCloud(const sensor_msgs::P
         });
         cloud_ptr->header = cloud_mid360.header;
         cloud_ptr->is_dense = true;
+        return cloud_ptr;
     } else if (LidarModel::Instance()->lidar_type == LidarType::AVIA) {
         pcl::PointCloud<VelodynePointXYZIRT> cloud_avia;
         pcl::fromROSMsg(*msg, cloud_avia);
@@ -380,16 +388,19 @@ PCLCloudXYZIRT::Ptr PreProcessing::ConvertRosMessageToCloud(const sensor_msgs::P
         });
         cloud_ptr->header = cloud_avia.header;
         cloud_ptr->is_dense = true;
+        return cloud_ptr;
+
     } else {
         return nullptr;
     }
+    // return
 }
 // velody雷达会出现的问题，需要自己计算每个点的时间偏移
 // 根据第一个点，雷达的旋转速度，计算点的时间偏移
 void PreProcessing::ComputePointOffsetTime(const PCLCloudXYZIRT::Ptr& cloud, double lidar_rata) {
     // 雷达线束
     const int lidar_scan_num = LidarModel::Instance()->v_scan_num_;
-    const auto point_size = cloud->size();
+    // const auto point_size = cloud->size();
     const double lidar_omega = 2 * M_PI * lidar_rata;  // 雷达的角速度
     std::vector<bool> is_fisrt(lidar_scan_num, true);
     std::vector<double> yaw_fisrt_scan(lidar_scan_num, 0.0);
