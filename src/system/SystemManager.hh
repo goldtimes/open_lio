@@ -15,6 +15,7 @@
 #include "common/data_type.hh"
 #include "common/math_utils.hh"
 #include "imu/imu_data_search.hh"
+#include "lidar_process/pointcloud_cluster.hh"
 #include "sensors/imu.hh"
 #include "slam_note/save_map.h"
 
@@ -60,7 +61,7 @@ class SystemManager {
     // 系统初始化
     std::atomic<bool> system_has_init_;
 
-   private:
+   public:
     // sub
     ros::Subscriber imu_sub;
     ros::Subscriber lidar_sub;
@@ -84,8 +85,14 @@ class SystemManager {
     ros::Publisher plannar_cloud_pub;
 
     std::mutex mtx_raw_cloud_queue;
-
+    std::mutex mtx_cloud_cluster_queue_;
     std::deque<sensor_msgs::PointCloud2Ptr> raw_cloud_queue_;
+    std::deque<PointCloudClusterPtr> cloud_cluster_queue_;
+
+    // 条件变量
+    std::condition_variable cv_frontend_;
+    std::condition_variable cv_localization_;
+    std::condition_variable cv_preprogressing_;
 
     // server
     ros::ServiceServer map_saver_server_;

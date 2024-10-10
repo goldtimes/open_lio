@@ -253,6 +253,7 @@ void SystemManager::LidarLivoxCallback(const livox_ros_driver::CustomMsg::ConstP
         std::lock_guard<std::mutex> lck(mtx_raw_cloud_queue);
         raw_cloud_queue_.push_back(cloud_ptr);
         // notify one
+        cv_preprogressing_.notify_one();
     }
 }
 
@@ -261,6 +262,7 @@ void SystemManager::LidarStandarMsgCallback(const sensor_msgs::PointCloud2::Ptr&
         std::lock_guard<std::mutex> lck(mtx_raw_cloud_queue);
         raw_cloud_queue_.push_back(msg);
         // notify one
+        cv_preprogressing_.notify_one();
     }
 }
 void SystemManager::IMUCallback(const sensor_msgs::Imu::Ptr& msg) {
