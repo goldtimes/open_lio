@@ -39,7 +39,7 @@ class PreProcessing {
    private:
     pcl::VoxelGrid<PCLPointXYZI> corner_voxel_filter_;
     pcl::VoxelGrid<PCLPointXYZI> plannar_voxel_filter_;
-    PCLCloudXYZIRT::Ptr temp_cloud_ptr;
+    PCLCloudXYZIRT::Ptr temp_cloud_ptr_;
     std::shared_ptr<FeatureExtractor> feature_extractor_ptr_;
     std::shared_ptr<PointCloudProjector> cloud_projector_ptr_;
     std::shared_ptr<LidarDistortionCorrector> lidar_distortion_corrector_ptr_;
