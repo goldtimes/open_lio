@@ -8,6 +8,13 @@
 #define SizeNaN (std::numeric_limits<unsigned long>::max())
 #define StringEmpty (std::string(""))
 
+// 前端配准方式
+static const std::string kPointToPlane_IVOX = "PointToPlane_IVOX";
+static const std::string kPointToPlane_KdTree = "PointToPlane_KdTree";
+static const std::string kLoamFull_KdTree = "LoamFull_KdTree";
+static const std::string kIcpOptimized = "IcpOptimized";
+static const std::string kIncrementalNDT = "IncrementalNDT";
+
 // 数据存放的目录
 static const std::string kDataPath = std::string(PROJECT_SOURCE_DIR) + "/data/";
 // 分割后的地图
