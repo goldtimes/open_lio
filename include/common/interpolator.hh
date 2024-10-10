@@ -62,4 +62,6 @@ class Interpolator {
         return ((typename Derived::Scalar(1.0)) - temp_t) * v_0 + temp_t * v_1;
     }
 };
+
+
 }  // namespace lio
