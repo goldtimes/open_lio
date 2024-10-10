@@ -88,10 +88,12 @@ add_executable(app_node
   src/system/SystemManager.cc
   src/system/ConfigParams.cc
   src/lidar_process/lidar_model.cc
+  src/lidar_process/lidar_distortion_corrector.cc
   src/slam/preprocess.cc
 )
 add_dependencies(app_node ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
 target_link_libraries(app_node 
+  tbb
   ${catkin_LIBRARIES} 
   ${PCL_LIBRARIES} 
   ${OpenCV_LIBRARIES} 
