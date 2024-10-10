@@ -7,9 +7,9 @@ namespace lio {
 struct PointCloudCluster {
     PointCloudCluster() {
         raw_cloud_.reset(new PCLCloudXYZIRT);
-        ordered_cloud_.reset(new PCLCloudXYZIRT);
-        corner_cloud_.reset(new PCLCloudXYZIRT);
-        planar_cloud_.reset(new PCLCloudXYZIRT);
+        ordered_cloud_.reset(new PCLCloudXYZI);
+        corner_cloud_.reset(new PCLCloudXYZI);
+        planar_cloud_.reset(new PCLCloudXYZI);
     }
     PointCloudCluster(const PointCloudCluster& other) noexcept {
         raw_cloud_ = other.raw_cloud_;
@@ -63,11 +63,11 @@ struct PointCloudCluster {
         planar_cloud_->clear();
     }
 
-    PCLCloudXYZIRT::Ptr raw_cloud_;      // lidar frame
-    PCLCloudXYZIRT::Ptr ordered_cloud_;  // 去畸变后的点云 imu_frame
-    PCLCloudXYZIRT::Ptr corner_cloud_;   // 角点 imu_frame
-    PCLCloudXYZIRT::Ptr planar_cloud_;   // 平面点 imu_frame
-    uint64_t timestamped_ = 0;           // us
+    PCLCloudXYZIRT::Ptr raw_cloud_;    // lidar frame
+    PCLCloudXYZI::Ptr ordered_cloud_;  // 去畸变后的点云 imu_frame
+    PCLCloudXYZI::Ptr corner_cloud_;   // 角点 imu_frame
+    PCLCloudXYZI::Ptr planar_cloud_;   // 平面点 imu_frame
+    uint64_t timestamped_ = 0;         // us
 
     std::vector<IMUData> imu_datas_;
     std::vector<float> point_depth_vec_;
