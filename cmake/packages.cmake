@@ -49,9 +49,9 @@ include_directories(${Glog_INCLUDE_DIRS})
 # include_directories(${CHOLMOD_INCLUDE_DIRS})
 
 # pcl
-find_package(PCL REQUIRED)
-include_directories(${PCL_INCLUDE_DIRS})
-link_directories(${PCL_LIBRARY_DIRS})
+# find_package(PCL REQUIRED)
+# include_directories(${PCL_INCLUDE_DIRS})
+# link_directories(${PCL_LIBRARY_DIRS})
 
 # opencv
 find_package(OpenCV REQUIRED)

@@ -22,14 +22,11 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   # cv_bridge
-  
-  # pcl library
   pcl_ros
   pcl_conversions
   # external
   # ndt_omp
   livox_ros_driver
-
   # msgs
   std_msgs
   sensor_msgs
@@ -40,9 +37,7 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 find_package(OpenMP REQUIRED)
-# find_package(PCL REQUIRED)
-# find_package(OpenCV REQUIRED QUIET)
-# find_package(GTSAM REQUIRED QUIET)
+find_package(PCL REQUIRED)
 find_package(Boost REQUIRED COMPONENTS timer)
 
 
@@ -56,7 +51,6 @@ catkin_package(
   INCLUDE_DIRS include
   DEPENDS PCL 
   # GTSAM
-
   CATKIN_DEPENDS
   std_msgs
   nav_msgs
@@ -90,12 +84,15 @@ add_executable(app_node
   src/lidar_process/lidar_model.cc
   src/lidar_process/lidar_distortion_corrector.cc
   src/slam/preprocess.cc
+  src/slam/localization.cc
+  src/registration/icp_matcher.cc
 )
-add_dependencies(app_node ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
+# add_dependencies(app_node ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
+
 target_link_libraries(app_node 
   tbb
   ${catkin_LIBRARIES} 
-  ${PCL_LIBRARIES} 
+  ${PCL_LIBRARIES}
   ${OpenCV_LIBRARIES} 
   gtsam
   glog
