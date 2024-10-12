@@ -2,8 +2,7 @@
 #include <pcl/filters/voxel_grid.h>
 #include <memory>
 #include "common/data_search.hh"
-// #include "common/data_type.hh"
-#include "lidar_process/lidar_model.hh"
+
 #include "livox_ros_driver/CustomMsg.h"
 #include "sensors/imu.hh"
 #include "sensors/point_types.hh"
@@ -25,7 +24,7 @@ class PreProcessing {
 
    public:
     PreProcessing() = delete;
-    explicit PreProcessing(std::shared_ptr<SystemManager> sys);
+    explicit PreProcessing(SystemManager* sys);
     ~PreProcessing() = default;
     void Run();
 
@@ -43,6 +42,6 @@ class PreProcessing {
     std::shared_ptr<FeatureExtractor> feature_extractor_ptr_;
     std::shared_ptr<PointCloudProjector> cloud_projector_ptr_;
     std::shared_ptr<LidarDistortionCorrector> lidar_distortion_corrector_ptr_;
-    std::shared_ptr<SystemManager> system_manager_;
+    SystemManager* system_manager_;
 };
 }  // namespace lio

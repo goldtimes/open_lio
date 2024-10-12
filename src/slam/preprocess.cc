@@ -7,7 +7,7 @@
 #include "lidar_process/pointcloud_cluster.hh"
 #include "system/ConfigParams.hh"
 namespace lio {
-PreProcessing::PreProcessing(std::shared_ptr<SystemManager> sys) {
+PreProcessing::PreProcessing(SystemManager* sys) {
     system_manager_ = sys;
     // lidar distortion corrector
     lidar_distortion_corrector_ptr_ = std::make_shared<LidarDistortionCorrector>(ConfigParams::GetInstance().T_IL_);

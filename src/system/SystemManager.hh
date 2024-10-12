@@ -12,9 +12,11 @@
 #include <memory>
 #include <mutex>
 #include <queue>
+#include <thread>
 #include "common/data_type.hh"
 #include "common/math_utils.hh"
 #include "imu/imu_data_search.hh"
+#include "lidar_process/lidar_model.hh"
 #include "lidar_process/pointcloud_cluster.hh"
 #include "sensors/imu.hh"
 #include "slam_note/save_map.h"
@@ -55,6 +57,9 @@ class SystemManager {
     void EncoderCallback(const nav_msgs::Odometry::Ptr& msg);
     void InitposeCallback(const geometry_msgs::PoseWithCovarianceStampedConstPtr& init_pose_cov);
     bool SaveMap(slam_note::save_map::Request& req, slam_note::save_map::Response& resp);
+
+    void InitMapMode();
+    void InitLocalizationMode();
 
    public:
     std::shared_ptr<ros::NodeHandle> nh_;
@@ -103,5 +108,16 @@ class SystemManager {
 
     // imu_data_searcher
     std::shared_ptr<IMUDataSearcher> imu_data_searcher_ptr_;
+
+    // 数据预处理模块
+    PreProcessing* pre_progressing_module_;
+    std::thread* progressing_thread_;
+    // 建图前端模块
+    std::shared_ptr<FrontEnd> frontend_module_;
+    // 定位模块
+    Localization* localization_module_;
+    std::thread* localization_thread_;
+    // 回环检测模块
+    std::shared_ptr<LoopClosure> loopclosure_module_;
 };
 }  // namespace lio

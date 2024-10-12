@@ -2,17 +2,35 @@
 #include <glog/logging.h>
 #include "common/constant_variable.hh"
 #include "common/ros_util.hh"
-#include "lidar_process/lidar_model.hh"
+#include "slam/localization.hh"
+#include "slam/preprocess.hh"
 #include "system/ConfigParams.hh"
+
 namespace lio {
 SystemManager::SystemManager(std::shared_ptr<ros::NodeHandle> nh) {
     nh_ = std::move(nh);
     InitConfigParams();
     InitLidarModel();
     InitRosPublishers();
+    // 开启了数据的接受
     InitRosSubscribers();
 
     imu_data_searcher_ptr_ = std::make_shared<IMUDataSearcher>(ConfigParams::GetInstance().imu_data_buffer_size_);
+
+    // 启动建图或者定位模式
+    if (slam_mode_ == SLAM_MODE::MAPPING) {
+        InitMapMode();
+        LOG(INFO) << "\033[1;32m----> System Started. Mapping Mode \033[0m";
+    } else if (slam_mode_ == SLAM_MODE::LOCALIZATION) {
+        InitLocalizationMode();
+        LOG(INFO) << "\033[1;32m----> System Started. Localization Mode \033[0m";
+    } else {
+        LOG(FATAL) << "Unknowed slam mode";
+    }
+    // 提示 c++ 不允许使用不完成的类型名 只在前面声明过，但是没有包含类的头文件
+    pre_progressing_module_ = new PreProcessing(this);
+
+    progressing_thread_ = new std::thread(&PreProcessing::Run, pre_progressing_module_);
 }
 
 SystemManager::~SystemManager() {
@@ -365,4 +383,32 @@ void SystemManager::InitposeCallback(const geometry_msgs::PoseWithCovarianceStam
 bool SystemManager::SaveMap(slam_note::save_map::Request& req, slam_note::save_map::Response& resp) {
     return true;
 }
+
+void SystemManager::InitMapMode() {
+    InitServer();
+    // 闭环检测
+    // 前端
+    // 可视化线程
+}
+void SystemManager::InitLocalizationMode() {
+    // 定位线程
+    localization_module_ = new Localization(this);
+    localization_thread_ = new std::thread(&Localization::Run, localization_module_);
+}
+
+void SystemManager::Run() {
+    if (slam_mode_ == SLAM_MODE::LOCALIZATION) {
+        RunLocalization();
+    } else if (slam_mode_ == SLAM_MODE::MAPPING) {
+        RunMapping();
+    }
+}
+
+void SystemManager::RunLocalization() {
+    // publish path, local map and global map
+}
+
+void SystemManager::RunMapping() {
+}
+
 }  // namespace lio
