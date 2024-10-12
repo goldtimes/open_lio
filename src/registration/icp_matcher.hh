@@ -1,6 +1,7 @@
 #pragma once
 #include <glog/logging.h>
 #include <pcl/kdtree/kdtree_flann.h>
+#include <deque>
 #include "common/math_utils.hh"
 #include "registration/registration_interface.hh"
 
@@ -16,9 +17,14 @@ class ICPMatcher final : public RegistrationInterface {
                double max_correspond_distance, double position_converage_thresh, double rotation_converage_thresh,
                double keyframe_position_thresh, double Keyframe_rotation_thresh, bool is_localization_mode);
 
-    bool Match(const lio::PointCloudClusterPtr& cloud_cluster, Eigen::Matrix<double, 4, 4>& T);
+    bool Match(const lio::PointCloudClusterPtr& cloud_cluster, Eigen::Matrix4d& T) override;
+    void AddCloudToLocalMap(std::initializer_list<PCLCloudXYZI> cloud_list) override;
+    // 返回值不可忽略且不可以修改，获取配准分数
+    [[nodiscard]] float GetFitnessScore(float max_range) const override;
 
-   public:
+   private:
+    bool IsNeedAddCloud(const Eigen::Matrix<double, 4, 4>& T);
+
    private:
     // icp的迭代次数
     int max_iterations_;
@@ -40,8 +46,10 @@ class ICPMatcher final : public RegistrationInterface {
 
     CloudType::Ptr local_map_ptr_;
     CloudType::Ptr source_cloud_ptr_;
+
     Eigen::Matrix<double, 4, 4> final_transformation_;
     pcl::KdTreeFLANN<PointType> kdtree_flann_{};
+    std::deque<CloudType::Ptr> cloud_queue_;
 
     bool is_localization_mode_;
 };

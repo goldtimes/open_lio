@@ -45,4 +45,41 @@ inline Eigen::Matrix<typename Derived::Scalar, 3, 3> SO3Exp(const Eigen::MatrixB
     }
 }
 
+// rotation to rpy
+template <typename Derived>
+inline Eigen::Matrix<typename Derived::Scalar, 3, 1> RotationMatrixToRPY(const Eigen::MatrixBase<Derived>& R) {
+    // 检查是否接近奇异值，例如90度的俯仰
+    typename Derived::Scalar roll, pitch, yaw;
+    if (std::abs(R(2, 0)) >= 1) {
+        // 当俯仰接近90度时，roll和yaw将不再具有唯一解
+        yaw = 0.0;
+        if (R(2, 0) < 0) {  // pitch is 90 degrees
+            pitch = M_PI / 2.0;
+            roll = yaw + atan2(R(0, 1), R(0, 2));
+        } else {  // pitch is -90 degrees
+            pitch = -M_PI / 2.0;
+            roll = -yaw + atan2(-R(0, 1), -R(0, 2));
+        }
+    } else {
+        // 正常情况下计算roll, pitch, yaw
+        roll = atan2(R(2, 1), R(2, 2));
+        pitch = -asin(R(2, 0));
+        yaw = atan2(R(1, 0), R(0, 0));
+    }
+    return {roll, pitch, yaw};
+}
+
+// template <typename Derived>
+// inline Eigen::Matrix<typename Derived::Scalar, 3, 1> RotationMatrixToRPY(const Eigen::MatrixBase<Derived>& R) {
+//     eigen_assert(R.rows() == 3u);
+//     eigen_assert(R.cols() == 3u);
+
+//     typename Derived::Scalar roll, pitch, yaw;
+//     roll = std::atan2(R(2, 1), R(2, 2));
+//     pitch = std::asin(-R(2, 0));
+//     yaw = std::atan2(R(1, 0), R(0, 0));
+
+//     return {roll, pitch, yaw};
+// }
+
 }  // namespace math_utils

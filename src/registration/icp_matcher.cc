@@ -119,12 +119,74 @@ bool ICPMatcher::Match(const lio::PointCloudClusterPtr& cloud_cluster, Eigen::Ma
         }
     }
     final_transformation_ = T_temp;
-    if (has_converage_) {
+    if (has_converage_ && IsNeedAddCloud(final_transformation_) && !is_localization_mode_) {
         // 根据距离是否更新keyframe
-    } else {
+        CloudType::Ptr transformed_cloud(new CloudType);
+        transformed_cloud = lidar_utils::TransformPointCloud(source_cloud_ptr_, final_transformation_);
+        AddCloudToLocalMap({*transformed_cloud});
+    } else if (!has_converage_) {
         LOG(ERROR) << "icp optimized match failed!\n";
     }
     return has_converage_;
+}
+
+void ICPMatcher::AddCloudToLocalMap(std::initializer_list<PCLCloudXYZI> cloud_list) {
+    const auto new_cloud = (cloud_list.begin())->makeShared();
+    if (is_localization_mode_) {
+        *local_map_ptr_ = *new_cloud;
+    } else {
+        cloud_queue_.push_back(new_cloud);
+        if (cloud_queue_.size() > map_queue_size_) {
+            cloud_queue_.pop_front();
+        }
+        local_map_ptr_->clear();
+        for (const auto& cloud : cloud_queue_) {
+            *local_map_ptr_ += *cloud;
+        }
+        local_map_ptr_ = lidar_utils::VoxelGridCloud(local_map_ptr_, local_map_filter_size_);
+        kdtree_flann_.setInputCloud(local_map_ptr_);
+    }
+}
+
+// 返回值不可忽略且不可以修改，获取配准分数
+[[nodiscard]] float ICPMatcher::GetFitnessScore(float max_range) const {
+    float score = 0;
+    // 将源点云通过T矩阵转换后，计算分数
+    CloudType::Ptr transformed_cloud_ptr(new CloudType);
+    transformed_cloud_ptr = lidar_utils::TransformPointCloud(source_cloud_ptr_, final_transformation_);
+
+    std::vector<int> nn_indices;
+    std::vector<float> nn_dist;
+
+    int nr = 0;
+    for (size_t i = 0; i < transformed_cloud_ptr->size(); ++i) {
+        kdtree_flann_.nearestKSearch(transformed_cloud_ptr->points[i], 1, nn_indices, nn_dist);
+        if (nn_dist.front() < max_range) {
+            score += nn_dist.front();
+            nr++;
+        }
+    }
+    if (nr > 0) {
+        return score / static_cast<float>(nr);
+    } else {
+        return -1;
+    }
+}
+
+bool ICPMatcher::IsNeedAddCloud(const Eigen::Matrix<double, 4, 4>& T) {
+    // 初始化一次
+    static Eigen::Matrix<double, 4, 4> last_T = T;
+    // 计算两帧的距离+
+    Eigen::Matrix3d R_delta = last_T.block<3, 3>(0, 0).inverse() * T.block<3, 3>(0, 0);
+    // matrix to rpy
+    Eigen::Matrix<double, 3, 1> euler_delta = math_utils::RotationMatrixToRPY(R_delta);
+    Eigen::Matrix<double, 3, 1> t_delta = last_T.block<3, 1>(0, 3) - T.block<3, 1>(0, 3);
+    if (t_delta.norm() > keyframe_position_thresh_ || euler_delta.norm() > Keyframe_rotation_thresh_) {
+        last_T = T;
+        return true;
+    } else {
+        return false;
+    }
 }
 
 }  // namespace registration
