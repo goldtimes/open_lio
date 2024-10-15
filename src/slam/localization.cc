@@ -6,7 +6,38 @@
 #include <iostream>
 #include "common/constant_variable.hh"
 #include "common/lidar_utils.hh"
+#include "system/ConfigParams.hh"
 namespace lio {
+
+Localization::Localization(SystemManager* sys) : sys_(sys) {
+    // if (use_tile_map_) {
+    //     tile_map_grid_size_ = ConfigParams::GetInstance().tile_map_grid_size_;
+    //     tile_map_grid_size_half_ = tile_map_grid_size_ * 0.5;
+    // }
+}
+
+void Localization::SetLidarPoseInformation() {
+    double lidar_rot_std = ConfigParams::GetInstance().lidar_config.lidar_rotation_noise;
+    double lidar_pos_std = ConfigParams::GetInstance().lidar_config.lidar_position_noise;
+    lidar_pose_info.setZero();
+    lidar_pose_info.block<3, 3>(0, 0) = Eigen::Matrix3d::Identity() / std::pow(lidar_rot_std, 2);
+    lidar_pose_info.block<3, 3>(3, 3) = Eigen::Matrix3d::Identity() / std::pow(lidar_pos_std, 2);
+}
+void Localization::InitMatcher() {
+    if (ConfigParams::GetInstance().front_config.registration_and_searcher_mode_ == kIcpOptimized) {
+        matcher_ = std::make_shared<registration::ICPMatcher>(
+            ConfigParams::GetInstance().front_config.registration_opti_iter_num_,
+            ConfigParams::GetInstance().front_config.registration_local_map_size_,
+            static_cast<float>(ConfigParams::GetInstance().front_config.registration_local_map_cloud_filter_size_),
+            static_cast<float>(ConfigParams::GetInstance().front_config.registration_source_cloud_filter_size_),
+            static_cast<double>(ConfigParams::GetInstance().front_config.registration_point_search_thres_),
+            static_cast<double>(ConfigParams::GetInstance().front_config.registration_position_converge_thres_),
+            static_cast<double>(ConfigParams::GetInstance().front_config.registration_rotation_converge_thres_),
+            static_cast<double>(ConfigParams::GetInstance().front_config.registration_keyframe_delta_rotation_),
+            static_cast<double>(ConfigParams::GetInstance().front_config.registration_keyframe_delta_dist_), true);
+    }
+}
+
 void Localization::Run() {
     LOG(INFO) << "\033[1;32m----> Localization Started.\033[0m";
     // 加载地图
@@ -45,7 +76,11 @@ void Localization::Run() {
         if (!has_init_) {
             // 设置了初始化位姿
             has_init_ = Init();
+            // 初始化预积分
+            // TODO
+            continue;
         }
+        // TODO 状态传播然后匹配，根据位置更新地图
     }
 }
 
@@ -62,6 +97,32 @@ bool Localization::Init() {
         init_pose = init_pose_optinal_.value();
         init_pose_optinal_.reset();
     }
+    // 根据init_pose来加载地图
+    const auto local_map = LoadLocalMap(init_pose);
+    if (local_map) {
+        return false;
+    }
+    // 更新localmap
+    UpdateLocalMapCloud(local_map);
+    // 配准
+    matcher_->AddCloudToLocalMap({*local_map});
+    const bool match_result = matcher_->Match(curr_cloud_cluster_, init_pose);
+    // 2米以内的参与计算
+    const float fitness_score = matcher_->GetFitnessScore(2.0);
+    if (match_result && fitness_score < 1.0) {
+        // 这里没有创建一定范围匹配搜索
+        LOG(INFO) << "get init pose, match success, match score:" << fitness_score;
+    } else {
+        LOG(WARNING) << "Initial registration failed. "
+                     << "Please try to continue initialization and give a better initial pose.";
+    }
+    return match_result;
+}
+
+void Localization::UpdateLocalMapCloud(const PCLCloudXYZI::Ptr& new_cloud) {
+    std::lock_guard<std::mutex> lck(mtx_local_map_);
+    local_map_ptr_ = new_cloud;
+    need_update_local_map_visualization_ = true;
 }
 
 PCLCloudXYZI::Ptr Localization::LoadLocalMap(const Eigen::Matrix4d& init_pose) {
@@ -93,7 +154,7 @@ PCLCloudXYZI::Ptr Localization::LoadLocalMap(const Eigen::Matrix4d& init_pose) {
         }
         //  delete distant tile map cloud
         for (auto it = local_map_data_.begin(); it != local_map_data_.end();) {
-            if ((it.first - curr_grid_index).norm() > 2) {
+            if ((it->first - curr_grid_index).norm() > 2) {
                 local_map_data_.erase(it++);
                 need_update_local_map_ = true;
             } else {
@@ -111,7 +172,7 @@ PCLCloudXYZI::Ptr Localization::LoadLocalMap(const Eigen::Matrix4d& init_pose) {
             if (!pair.second) {
                 continue;
             }
-            *map_cloud += *(data.second);
+            *map_cloud += *(pair.second);
         }
         return map_cloud;
     } else {
