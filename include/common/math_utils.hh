@@ -99,7 +99,7 @@ inline Eigen::Matrix<typename Derived::Scalar, 3, 3> So3JacobianLeft(const Eigen
         return Jl;
     }
 }
-
+// SO3上的BCH线性近似
 template <typename Derived>
 inline Eigen::Matrix<typename Derived::Scalar, 3, 3> So3JacobianRight(const Eigen::MatrixBase<Derived>& v) {
     eigen_assert(v.size() == 3u);
