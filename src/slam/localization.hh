@@ -5,6 +5,7 @@
 #include "common/compare_function.hh"
 #include "registration/icp_matcher.hh"
 #include "registration/registration_interface.hh"
+#include "sensors/navi_state.hh"
 #include "slam/split_map.hh"
 #include "system/SystemManager.hh"
 
@@ -38,6 +39,12 @@ class Localization {
 
     Eigen::Matrix<double, 6, 6> lidar_pose_info;
 
+    Eigen::Matrix3d curr_pose_;
+    Eigen::Matrix3d last_pose_;
+    Eigen::Matrix3d delta_pose_;
+
+    NaviStateData last_navi_state_;
+
     std::mutex mtx_global_map_;
     std::mutex mtx_local_map_;
     std::mutex mtx_lidar_cloud_;
@@ -60,8 +67,6 @@ class Localization {
     PointCloudClusterPtr curr_cloud_cluster_;
     uint64_t curr_time_us_;
 
-    std::atomic_bool has_init_{false};
-    std::atomic_bool need_update_local_map_visualization_{false};
     // 瓦片地图的时候, 并不推荐
     bool use_tile_map_;
     // 存放点云地图以及对应的索引

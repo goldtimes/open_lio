@@ -6,6 +6,7 @@
 #include <iostream>
 #include "common/constant_variable.hh"
 #include "common/lidar_utils.hh"
+#include "imu/pre_integration.hh"
 #include "system/ConfigParams.hh"
 namespace lio {
 
@@ -20,8 +21,8 @@ void Localization::SetLidarPoseInformation() {
     double lidar_rot_std = ConfigParams::GetInstance().lidar_config.lidar_rotation_noise;
     double lidar_pos_std = ConfigParams::GetInstance().lidar_config.lidar_position_noise;
     lidar_pose_info.setZero();
-    lidar_pose_info.block<3, 3>(0, 0) = Eigen::Matrix3d::Identity() / std::pow(lidar_rot_std, 2);
-    lidar_pose_info.block<3, 3>(3, 3) = Eigen::Matrix3d::Identity() / std::pow(lidar_pos_std, 2);
+    lidar_pose_info.block<3, 3>(0, 0) = Eigen::Matrix3d::Identity() / std::pow(lidar_rot_std, 2.0);
+    lidar_pose_info.block<3, 3>(3, 3) = Eigen::Matrix3d::Identity() / std::pow(lidar_pos_std, 2.0);
 }
 void Localization::InitMatcher() {
     if (ConfigParams::GetInstance().front_config.registration_and_searcher_mode_ == kIcpOptimized) {
@@ -76,11 +77,61 @@ void Localization::Run() {
         if (!has_init_) {
             // 设置了初始化位姿
             has_init_ = Init();
-            // 初始化预积分
+            // 紧耦合的情况下初始化预积分
+            if (has_init_ && ConfigParams::GetInstance().fusion_method_ == kFusionTightCouplingOptimization) {
+                // InitPreintegration();
+            }
             // TODO
             continue;
         }
         // TODO 状态传播然后匹配，根据位置更新地图
+        auto local_map = LoadLocalMap(last_pose_);
+        if (need_update_local_map_) {
+            UpdateLocalMapCloud(local_map);
+            // 匹配器设置target map
+            matcher_->AddCloudToLocalMap({*local_map});
+        }
+        NaviStateData predict_nav_state;
+        if (ConfigParams::GetInstance().fusion_method_ == kFusionTightCouplingOptimization) {
+            // use imu integrals as predicted values for registration
+            // predict_nav_state = IntegrateImuMeasures(last_nav_state_);
+        } else if (ConfigParams::GetInstance().fusion_method_ == kFusionLoopCoupling) {
+            // use imu integrated rotation
+            predict_nav_state.SetPose(last_navi_state_.Pose() * delta_pose_);
+            const Eigen::Quaterniond first_q = curr_cloud_cluster_->imu_datas_.front().orientation_;
+            const Eigen::Quaterniond end_q = curr_cloud_cluster_->imu_datas_.back().orientation_;
+            predict_nav_state.R_ = last_navi_state_.R_ * (first_q.inverse() * end_q);
+        } else if (ConfigParams::GetInstance().fusion_method_ == kFusionTightCouplingKF) {
+            LOG(FATAL) << "Kalman filter support will be coming soon!";
+        } else {
+            LOG(FATAL) << "Fusion method doesn't support: " << ConfigParams::GetInstance().fusion_method_;
+        }
+        Eigen::Matrix4d match_pose = predict_nav_state.Pose();
+        if (!matcher_->Match(curr_cloud_cluster_, match_pose)) {
+            continue;
+        }
+        NaviStateData curr_nav_state;
+        if (ConfigParams::GetInstance().fusion_method_ == kFusionTightCouplingOptimization) {
+            curr_nav_state.SetPose(predict_nav_state.Pose());
+            curr_nav_state.V_ = predict_nav_state.V_;
+            curr_nav_state.timestamped_ = curr_time_us_;
+
+            /// TODO: Dynamically adjust lidar information matrix
+
+            // Performing pre-integration optimization
+            // Optimize(curr_nav_state, match_pose);
+        } else if (ConfigParams::GetInstance().fusion_method_ == kFusionLoopCoupling) {
+            curr_nav_state.SetPose(match_pose);
+            curr_nav_state.V_ = predict_nav_state.V_;
+            curr_nav_state.timestamped_ = curr_time_us_;
+        } else {
+            LOG(FATAL) << "Fusion method doesn't support: " << ConfigParams::GetInstance().fusion_method_;
+        }
+
+        // current lidar pose
+        Eigen::Matrix4d curr_pose = curr_nav_state.Pose();
+        delta_pose_ = last_pose_.inverse() * curr_pose;
+        last_pose_ = curr_pose;
     }
 }
 
@@ -112,6 +163,20 @@ bool Localization::Init() {
     if (match_result && fitness_score < 1.0) {
         // 这里没有创建一定范围匹配搜索
         LOG(INFO) << "get init pose, match success, match score:" << fitness_score;
+        curr_pose_ = init_pose;
+        Eigen::Matrix<double, 15, 15> cov = Eigen::Matrix<double, 15, 15>::Zero();
+        cov.block<3, 3>(0, 0) = Eigen::Matrix3d::Identity() * 1.0e-6 * 1.0e-6;  // rotation information matrix
+        cov.block<3, 3>(3, 3) = Eigen::Matrix3d::Identity() * 1.0e-2 * 1.0e-2;  // velocity information matrix
+        cov.block<3, 3>(6, 6) = Eigen::Matrix3d::Identity() * 1.0e-6 * 1.0e-6;  // position information matrix
+        cov.block<3, 3>(9, 9) =
+            Eigen::Matrix3d::Identity() * std::pow(0.1 * math_utils::kD2R, 2);  // bias gyro information matrix
+        cov.block<3, 3>(12, 12) = Eigen::Matrix3d::Identity() * 0.1 * 0.1;      // bias accel information matrix
+        last_navi_state_.SetPose(init_pose);
+        last_navi_state_.V_ = Eigen::Vector3d::Zero();
+        last_navi_state_.info = cov.inverse();
+        last_navi_state_.timestamped_ = curr_time_us_;
+        delta_pose_.setIdentity();
+        last_pose_ = init_pose;
     } else {
         LOG(WARNING) << "Initial registration failed. "
                      << "Please try to continue initialization and give a better initial pose.";

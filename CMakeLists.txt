@@ -13,7 +13,7 @@ ENDIF ()
 
 # 添加cmake中定义的变量
 add_definitions(-DPROJECT_SOURCE_DIR=\"${PROJECT_SOURCE_DIR}\")
-
+set(CMAKE_EXPORT_COMPILE_COMMANDS "YES")
 # 包含自己的cmake
 include(cmake/packages.cmake)
 
