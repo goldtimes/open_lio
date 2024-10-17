@@ -81,5 +81,47 @@ inline Eigen::Matrix<typename Derived::Scalar, 3, 1> RotationMatrixToRPY(const E
 
 //     return {roll, pitch, yaw};
 // }
+template <typename Derived>
+inline Eigen::Matrix<typename Derived::Scalar, 3, 3> So3JacobianLeft(const Eigen::MatrixBase<Derived>& v) {
+    eigen_assert(v.size() == 3u);
+
+    const typename Derived::Scalar phi = v.norm();
+    const typename Eigen::Matrix<typename Derived::Scalar, 3, 1> v_normlized = v.normalized();
+
+    if (phi <= std::numeric_limits<typename Derived::Scalar>::epsilon()) {
+        return Eigen::Matrix<typename Derived::Scalar, 3, 3>::Identity();
+    } else {
+        Eigen::Matrix<typename Derived::Scalar, 3, 3> Jl;
+        Jl = Eigen::Matrix<typename Derived::Scalar, 3, 3>::Identity() * std::sin(phi) / phi +
+             (typename Derived::Scalar(1.0) - std::sin(phi) / phi) * v_normlized * v_normlized.transpose() +
+             (typename Derived::Scalar(1.0) - std::cos(phi)) / phi * SO3Hat(v_normlized);
+
+        return Jl;
+    }
+}
+
+template <typename Derived>
+inline Eigen::Matrix<typename Derived::Scalar, 3, 3> So3JacobianRight(const Eigen::MatrixBase<Derived>& v) {
+    eigen_assert(v.size() == 3u);
+
+    const typename Derived::Scalar phi = v.norm();
+    const typename Eigen::Matrix<typename Derived::Scalar, 3, 1> v_normlized = v.normalized();
+
+    const Eigen::Matrix<typename Derived::Scalar, 3, 3> v_normlized_hat = SO3Hat(v_normlized);
+
+    if (phi < std::numeric_limits<typename Derived::Scalar>::epsilon()) {
+        return Eigen::Matrix<typename Derived::Scalar, 3, 3>::Identity();
+    } else {
+        const typename Derived::Scalar s2 = std::sin(phi / typename Derived::Scalar(2.0));
+        const typename Derived::Scalar one_minus_cos = typename Derived::Scalar(2.0) * s2 * s2;
+        const typename Derived::Scalar one_minus_sin_div_phi = (typename Derived::Scalar(1.0) - std::sin(phi) / phi);
+
+        Eigen::Matrix<typename Derived::Scalar, 3, 3> Jr;
+        Jr = Eigen::Matrix<typename Derived::Scalar, 3, 3>::Identity() - one_minus_cos / phi * v_normlized_hat +
+             one_minus_sin_div_phi * v_normlized_hat * v_normlized_hat;
+
+        return Jr;
+    }
+}
 
 }  // namespace math_utils
